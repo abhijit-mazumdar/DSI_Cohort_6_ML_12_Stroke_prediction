@@ -4,18 +4,13 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.utils import class_weight
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import precision_recall_curve
-from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, LeakyReLU
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 
 def local_css():
@@ -105,14 +100,13 @@ def local_css():
         unsafe_allow_html=True,
     )
 
-
 def impute_regression(df):
     train = df[df['bmi'].notna()]
     test = df[df['bmi'].isna()]
     X_train = train[['age', 'avg_glucose_level']]
     y_train = train['bmi']
     X_test = test[['age', 'avg_glucose_level']]
-    model = make_pipeline(PolynomialFeatures(2), LinearRegression())
+    model = Pipeline([('poly', PolynomialFeatures(2)), ('lr', LinearRegression())])
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
     df.loc[df['bmi'].isna(), 'bmi'] = preds
@@ -127,15 +121,13 @@ def compute_risk_info(df, categorical_features):
         high_risk_rate = rates.max()
         other_rate = df.loc[df[feature] != high_risk_cat, 'stroke'].mean()
         lift = high_risk_rate - other_rate
-
-        risk_info[feature] = {
-            'high_risk_category': high_risk_cat,
-            'stroke_rate_high_risk': high_risk_rate,
-            'stroke_rate_others': other_rate,
-            'risk_increase': lift
-        }
-
-    risk_info = {k: v for k, v in risk_info.items() if v['risk_increase'] > 0}
+        if lift > 0:
+            risk_info[feature] = {
+                'high_risk_category': high_risk_cat,
+                'stroke_rate_high_risk': high_risk_rate,
+                'stroke_rate_others': other_rate,
+                'risk_increase': lift
+            }
     max_lift = max(v['risk_increase'] for v in risk_info.values())
     for k in risk_info:
         risk_info[k]['weight'] = risk_info[k]['risk_increase'] / max_lift
@@ -148,30 +140,6 @@ def compute_automated_risk_score(row, risk_info):
         if row[feature] == info['high_risk_category']:
             score += info['weight']
     return score
-
-
-def build_model(input_dim):
-    model = Sequential()
-    model.add(Dense(256, input_shape=(input_dim,)))
-    model.add(LeakyReLU())
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
-
-    model.add(Dense(128))
-    model.add(LeakyReLU())
-    model.add(BatchNormalization())
-    model.add(Dropout(0.4))
-
-    model.add(Dense(64))
-    model.add(LeakyReLU())
-    model.add(Dropout(0.3))
-
-    model.add(Dense(1, activation='sigmoid'))
-
-    model.compile(optimizer=Adam(learning_rate=0.0005),
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
-    return model
 
 
 def main():
@@ -246,8 +214,7 @@ def main():
     label_map = cluster_stats['risk_label'].to_dict()
     df['segment'] = df['cluster'].map(label_map).astype('category')
 
-    if 'cluster' in df.columns:
-        df.drop(columns=['cluster'], inplace=True)
+    df.drop(columns=['cluster'], inplace=True)
 
     # User Input Section
     col1, col2 = st.columns(2)
@@ -267,14 +234,12 @@ def main():
 
     if st.button("Prediction"):
 
-        # Map user-friendly inputs to dataset labels for consistency
         work_type_map = {
             'Private': 'Private',
             'Self-employed': 'Self-employed',
             'Government Job': 'Govt_job',
             'Never worked': 'Never_worked'
         }
-
         smoking_status_map = {
             'formerly smoked': 'formerly smoked',
             'never smoked': 'never smoked',
@@ -282,12 +247,11 @@ def main():
             'Dont know': 'Unknown'
         }
 
-        # Map inputs
         mapped_work_type = work_type_map[work_type]
         mapped_smoking_status = smoking_status_map[smoking_status]
 
-        # Prepare user input DataFrame with mapped values
         user_df = pd.DataFrame([{
+            'gender': 0 if gender == 'Male' else 1,
             'age': age,
             'hypertension': 1 if hypertension == 'Yes' else 0,
             'heart_disease': 1 if heart_disease == 'Yes' else 0,
@@ -297,87 +261,77 @@ def main():
             'avg_glucose_level': avg_glucose_level,
             'bmi': bmi,
             'smoking_status': mapped_smoking_status,
-            'gender': 0 if gender == 'Male' else 1,
-            'stroke': 0  # dummy stroke for alignment
+            'stroke': 0  # dummy for alignment
         }])
 
-        # Append user input to df for consistent processing
+        # Append user to original df for consistent preprocessing
         df_with_user = pd.concat([df, user_df], ignore_index=True)
 
-        # Recompute risk score for the full dataset including user input
+        # Recompute risk score including user input
         df_with_user['risk_score'] = df_with_user.apply(lambda row: compute_automated_risk_score(row, risk_info), axis=1)
 
-        # Map segment labels to numeric for modeling
+        # Map segment labels to numeric
         segment_map = {'Low Risk': 0, 'Moderate Risk': 1, 'Elevated Risk': 2, 'High Risk': 3}
         df_with_user['segment'] = df_with_user['segment'].map(segment_map)
-        df_with_user['segment'].fillna(0, inplace=True)  # assign low risk if missing
+        df_with_user['segment'].fillna(0, inplace=True)  # default low risk if missing
 
-        # Prepare training and test sets (excluding user input for test)
-        train_df = df_with_user.iloc[:-1].copy()
-        test_df = df_with_user.iloc[[-1]].copy()
+        # Split train and user input for prediction
+        train_df = df_with_user.iloc[:-1]
+        test_df = df_with_user.iloc[[-1]]
 
-        features_subset = ['age', 'hypertension', 'heart_disease', 'ever_married',
-                           'work_type', 'Residence_type', 'avg_glucose_level', 'risk_score', 'segment']
+        features = ['gender', 'age', 'hypertension', 'heart_disease', 'ever_married',
+                    'work_type', 'Residence_type', 'avg_glucose_level', 'bmi',
+                    'smoking_status', 'risk_score', 'segment']
+        X_train = train_df[features]
+        y_train = train_df['stroke']
 
-        X = train_df[features_subset]
-        y = train_df['stroke']
+        X_test = test_df[features]
 
-        numeric_features = ['age', 'avg_glucose_level', 'risk_score']
-        categorical_features = ['work_type', 'segment']
+        numeric_features = ['age', 'avg_glucose_level', 'bmi', 'risk_score']
+        categorical_features = ['gender', 'work_type', 'Residence_type', 'smoking_status', 'segment']
 
         preprocessor = ColumnTransformer([
             ('num', StandardScaler(), numeric_features),
             ('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), categorical_features)
         ])
 
-        X_train = preprocessor.fit_transform(X)
-        y_train = y.values
+        pipeline = Pipeline([
+            ('preprocessor', preprocessor),
+            ('sgd', SGDClassifier(
+                penalty='l2',
+                max_iter=2000,
+                loss='modified_huber',
+                learning_rate='optimal',
+                class_weight='balanced',
+                alpha=0.01,
+                random_state=42))
+        ])
 
-        X_test = preprocessor.transform(test_df[features_subset])
+        pipeline.fit(X_train, y_train)
 
-        # Compute class weights
-        cw = class_weight.compute_class_weight('balanced', classes=np.unique(y_train), y=y_train)
-        cw_dict = {0: cw[0], 1: cw[1]}
+        y_prob = pipeline.predict_proba(X_test)[:, 1]
 
-        # Build and train neural network
-        model = build_model(X_train.shape[1])
-
-        callbacks = [
-            EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True),
-            ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5)
-        ]
-
-        with st.spinner("This may take a few moments."):
-            history = model.fit(
-                X_train, y_train,
-                validation_split=0.2,
-                epochs=100,
-                batch_size=32,
-                class_weight=cw_dict,
-                callbacks=callbacks,
-                verbose=0
-            )
-
-        # Predict on test (user input)
-        y_prob = model.predict(X_test).flatten()
-
-        # Find best threshold using train data predictions
-        train_probs = model.predict(X_train).flatten()
+        # Find best threshold on train data for F1
+        train_probs = pipeline.predict_proba(X_train)[:, 1]
         precision, recall, thresholds = precision_recall_curve(y_train, train_probs)
         f1_scores = 2 * precision * recall / (precision + recall + 1e-10)
         best_idx = np.argmax(f1_scores[:-1])
         best_threshold = thresholds[best_idx]
 
         user_prob = y_prob[0]
-        user_pred = 1 if user_prob >= best_threshold else 0
+        user_pred = int(user_prob >= best_threshold)
+
+        # Show Low Risk or High Risk label with color
+        risk_label = "High Risk" if user_pred == 1 else "Low Risk"
+        color = "#dc3545" if user_pred == 1 else "#28a745"  # red if high risk, green if low
 
         st.markdown(
-            f'<div style="font-size:2.5rem; font-weight:700; color:#212529;">'
-            f'Your Stroke Risk Probability: {user_prob:.2%}</div>',
-            unsafe_allow_html=True)
+            f'<div style="font-size:2.5rem; font-weight:700; color:{color};">'
+            f'Your Stroke Risk: {risk_label}</div>',
+            unsafe_allow_html=True
+        )
         if user_pred == 1:
-            st.error("⚠️ High risk detected. Please consult a healthcare professional.")
-        # Removed success message as requested
+            st.error("⚠️ Please consult a healthcare professional.")
 
     # Chatbot section
     st.markdown("---")
@@ -420,6 +374,7 @@ def main():
     points = sum([water, walk, meds, veg, smoke_avoid])
     st.progress(points / 5)
     st.markdown(f'<p style="font-size:1.3rem; color:#212529;">Points earned: {points}</p>', unsafe_allow_html=True)
+
 
 
 if __name__ == "__main__":
