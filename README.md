@@ -715,6 +715,8 @@ To interpret the model’s decisions, we used **SHAP (SHapley Additive exPlanati
 
 This project includes a user-friendly Streamlit web application for predicting stroke risk based on user health inputs.
 
+https://ml-12-stroke-prediction.streamlit.app/
+
 ## Features
 
 ### User Health Input
