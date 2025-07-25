@@ -99,92 +99,80 @@ Data preprocessing is a critical step in any machine learning project. The quali
 The raw stroke prediction dataset contained several imperfections, including missing BMI values, inconsistent categorical entries, and extreme outliers. This section describes the methods applied to clean and transform the data into a machine-learning-friendly format.
 
 
-### Handling Missing Values
 
-#### Missing BMI Values
-
-The **bmi** feature had missing values in approximately 5% of the records. Since BMI is an important indicator of health and stroke risk, it was necessary to impute these missing values rather than drop affected rows, which would reduce data size and potentially bias the dataset.
-
-Several imputation techniques were evaluated:
-
-- **Mean Imputation:** Replacing missing values with the mean BMI value of the dataset.
-- **Median Imputation:** Using the median BMI, less sensitive to outliers.
-- **Regression Imputation:** Predicting missing BMI using other related features (such as age and average glucose) through linear or polynomial regression.
-
-#### Regression-Based Imputation
-
-Regression imputation was found to be more effective in preserving the relationship between BMI and other features. A quadratic regression model using age and average glucose level predicted missing BMI values, accounting for nonlinear associations observed during exploratory data analysis.
-
-This method involved:
-
-- Training a polynomial regression model on records with known BMI.
-- Predicting BMI for records with missing values using this model.
-- Validating imputation quality by comparing imputed values with observed distributions.
+### Missing BMI Values
 
 
-#### BMI Computation and Imputation Strategy
 
-#### Importance of BMI in Stroke Prediction
+### Importance of BMI in Stroke Prediction
 
-Body Mass Index (BMI) is a crucial indicator of obesity, which is a known risk factor for stroke. However, in the stroke dataset, many BMI values are missing. Since accurate BMI data is essential for reliable risk modeling, we must estimate these missing values effectively.
+Body Mass Index (BMI) is a crucial indicator of obesity, a known risk factor for stroke. However, in the stroke dataset used, many BMI values are missing. Since accurate BMI data is essential for reliable risk modeling, we must estimate these missing values effectively to maintain dataset integrity and improve prediction outcomes.
 
-#### Why Impute Missing BMI Values?
 
-- **Data Completeness:** Missing BMI values reduce dataset usability and can bias model training.
-- **Preserve Statistical Relationships:** Proper imputation maintains underlying correlations between BMI and other clinical features.
-- **Improve Model Performance:** Accurate imputation enhances feature quality, leading to better predictive power for stroke risk.
+### Correlation Analysis to Guide Imputation
 
-#### Correlation Analysis to Guide Imputation
-
-We examined correlations between BMI and two related features — Age and Average Glucose Level — to understand their predictive power for estimating BMI:
+To select effective imputation methods, we analyzed the correlation of BMI with two clinically relevant features:
 
 | Correlation Metric           | Age vs BMI | Glucose vs BMI |
 |------------------------------|------------|----------------|
-| Original Data (with missing)  | 0.3334     | 0.1755         |
-| After Mean Imputation         | 0.3259     | 0.1688         |
-| After Median Imputation       | 0.3243     | 0.1669         |
-| After Polynomial Regression   | 0.3353     | 0.1836         |
+| Original Data (with missing) | 0.3334     | 0.1755         |
+| After Mean Imputation        | 0.3259     | 0.1688         |
+| After Median Imputation      | 0.3243     | 0.1669         |
+| After Regression Imputation  | 0.3353     | 0.1836         |
 
-- The moderate positive correlation (~0.33) between Age and BMI suggests age is a meaningful predictor.
-- Glucose level has a weaker but still notable correlation (~0.17–0.18) with BMI.
-- Polynomial regression imputation preserves and slightly improves these correlations compared to simpler mean or median imputation.
+- A moderate positive correlation (~0.33) between Age and BMI confirms age is a meaningful predictor.
+- Glucose levels show a weaker but non-negligible relationship with BMI (~0.17–0.18).
+- Polynomial regression imputation preserves and slightly improves these relationships better than simpler methods.
 
-#### Imputation Methods Evaluated
 
-1. **Mean Imputation:** Replaces missing BMI values with the overall mean BMI of the dataset.
-2. **Median Imputation:** Uses the median BMI, which is more robust to outliers.
-3. **Polynomial Regression Imputation:** Predicts missing BMI values using a polynomial regression model trained on Age and Average Glucose Level, capturing nonlinear relationships.
+## BMI Distribution Comparison
 
-#### Evaluation Metrics
+The following plot compares the BMI distributions from the original and imputed datasets:
 
-We evaluated the imputation methods on two fronts:
+![BMI Distribution Comparison](Images/BMI.png)
 
-- **Predictive Performance of Stroke Models:** Measured by Area Under the ROC Curve (AUC) and F1 Score, reflecting the impact of imputation on downstream stroke prediction.
-- **Imputation Accuracy:** Measured by Mean Squared Error (MSE) on BMI values artificially masked (hidden) during testing, representing how close the imputed values are to the true BMI.
+- All methods aim to maintain the original distribution.
+- **Regression-based imputation** closely tracks the original curve while slightly reducing distortion compared to mean or median methods.
 
-| Imputation Method      | Stroke Prediction AUC | Stroke Prediction F1 Score | BMI Imputation MSE (masked data) |
-|------------------------|----------------------|----------------------------|----------------------------------|
-| Mean                   | 0.7932               | 0.0000                     | 73.0823                          |
-| Median                 | 0.7889               | 0.0000                     | 73.5383                          |
-| Polynomial Regression  | 0.7610               | 0.0250                     | 59.4719                          |
+## Imputation Methods Evaluated
 
-#### Interpretation of Results
+- **Mean Imputation:** Replaces missing BMI with the dataset’s average.
+- **Median Imputation:** Uses the median BMI value, offering robustness to outliers.
+- **Polynomial Regression Imputation:** Predicts missing BMI using a regression model based on Age and Glucose, capturing nonlinear dependencies.
 
-- **Mean and Median Imputation:** Provide reasonable AUC scores but fail to improve F1 score, indicating poor identification of positive stroke cases. Both have high MSE, showing less accurate BMI estimates.
-- **Polynomial Regression Imputation:** Achieves the lowest MSE, indicating more accurate BMI estimations. Although the stroke prediction AUC is slightly lower, the small increase in F1 score suggests improved detection of stroke cases when using this imputation. The better estimation of BMI provides higher-quality input data, critical for complex models.
+## Evaluation Metrics
 
-#### Summary and Rationale
+We assessed the imputation approaches on:
 
-- Correlations demonstrate that Age and Glucose level are useful predictors for BMI.
-- Polynomial regression leverages these correlations to better estimate missing BMI values by capturing nonlinear patterns.
-- This improved BMI imputation reduces error and enhances feature quality.
-- Consequently, models trained with regression-imputed BMI have more reliable data, supporting improved clinical risk assessment.
-- Despite a slight drop in AUC, the enhanced F1 score and BMI accuracy justify the use of polynomial regression over simpler imputations.
+- **Predictive Power for Stroke Detection:** Evaluated by AUC and F1 Score.
+- **BMI Imputation Accuracy:** Evaluated by Mean Squared Error (MSE) on artificially masked BMI values.
 
-#### Conclusion
+| Imputation Method | Stroke Prediction AUC | Stroke Prediction F1 Score | BMI Imputation MSE (masked data) |
+|-------------------|------------------------|-----------------------------|----------------------------------|
+| Mean              | 0.7932                 | 0.0000                      | 73.0823                          |
+| Median            | 0.7889                 | 0.0000                      | 73.5383                          |
+| Regression        | 0.7610                 | 0.0250                      | 59.4719                          |
 
-Accurate imputation of BMI is vital for stroke risk modeling. Our analysis shows that polynomial regression-based BMI imputation, grounded in meaningful correlations with Age and Glucose, offers a more precise and clinically relevant approach compared to mean or median imputation. This method improves data integrity, supporting better downstream predictive performance and more trustworthy risk stratification.
 
+## Interpretation of Results
+
+**Mean and Median Imputation:**
+
+- Preserve overall dataset structure but underperform in stroke classification (F1 = 0).
+- Higher MSE indicates poor BMI estimation accuracy.
+
+**Polynomial Regression Imputation:**
+
+- **Lowest MSE**, indicating more realistic BMI predictions.
+- Slight drop in AUC but **non-zero F1 score**, signaling improved stroke case detection.
+- Best preserves correlations and real-world BMI behavior.
+
+
+## Summary and Rationale
+
+- BMI correlates moderately with Age and modestly with Glucose, providing a foundation for imputation.
+- **Regression imputation** effectively models these relationships, outperforming simpler methods on accuracy and clinical relevance.
+- Better BMI estimation leads to improved data quality, essential for complex model training and interpretation.
 
 ### Outlier Detection and Column Removal
 
@@ -716,6 +704,7 @@ To interpret the model’s decisions, we used **SHAP (SHapley Additive exPlanati
 This project includes a user-friendly Streamlit web application for predicting stroke risk based on user health inputs.
 
 https://ml-12-stroke-prediction.streamlit.app/
+
 
 ## Features
 
