@@ -173,7 +173,6 @@ We assessed the imputation approaches on:
 - **Regression imputation** effectively models these relationships, outperforming simpler methods on accuracy and clinical relevance.
 - Better BMI estimation leads to improved data quality, essential for complex model training and interpretation.
 
-
 ### Outlier Detection and Column Removal
 
 Certain extreme values in `bmi` and `avg_glucose_level` were identified as outliers that could skew model training:
@@ -702,6 +701,9 @@ To interpret the model’s decisions, we used **SHAP (SHapley Additive exPlanati
 ## Stroke Prediction Streamlit App
 
 This project includes a user-friendly Streamlit web application for predicting stroke risk based on user health inputs.
+
+https://ml-12-stroke-prediction.streamlit.app/
+
 
 ## Features
 
