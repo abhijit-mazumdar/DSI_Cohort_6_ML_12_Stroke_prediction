@@ -99,6 +99,7 @@ Data preprocessing is a critical step in any machine learning project. The quali
 The raw stroke prediction dataset contained several imperfections, including missing BMI values, inconsistent categorical entries, and extreme outliers. This section describes the methods applied to clean and transform the data into a machine-learning-friendly format.
 
 
+
 ### Missing BMI Values
 
 
