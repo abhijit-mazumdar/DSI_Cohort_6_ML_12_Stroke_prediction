@@ -148,7 +148,7 @@ def main():
     st.markdown("### Please enter your health details below to receive a stroke risk prediction.")
 
     # Load data
-    df = pd.read_csv("healthcare-dataset-stroke-data.csv")
+    df = pd.read_csv("./healthcare-dataset-stroke-data.csv")
     df.drop('id', axis=1, inplace=True)
     df = df[df['gender'] != 'Other']
 
