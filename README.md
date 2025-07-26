@@ -423,7 +423,7 @@ To improve stroke prediction and better understand risk profiles, we applied **K
 ### Interpretation
 
 - **High Risk (Cluster 1):** Older individuals with high glucose and BMI, and higher prevalence of hypertension and heart disease, showing the highest stroke rate.
-- **Elevated Risk (Cluster 0):** Middle-aged group with moderate glucose, BMI, and comorbidities, with moderate stroke risk.
+- **Moderate Risk (Cluster 0):** Middle-aged group with moderate glucose, BMI, and comorbidities, with moderate stroke risk.
 - **Low Risk (Cluster 2):** Younger, healthier individuals with very low stroke incidence.
 
 ### Conclusion
@@ -791,5 +791,5 @@ This project includes a user-friendly Streamlit web application for predicting s
 
 
 ## 12. Links to Personal Reflection
-Michelle: https://youtu.be/ZZFSFlfYjdc
+Michelle: https://youtu.be/zEUoOEVOJ-k
 
