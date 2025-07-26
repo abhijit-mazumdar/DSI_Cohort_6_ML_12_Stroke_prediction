@@ -14,19 +14,19 @@
 9. [Interpretability and Explainability](#9-interpretability-and-explainability)  
 10. [Deployment](#10-deployment)  
 11. [Challenges and Lessons Learned](#11-challenges-and-lessons-learned)  
+12. [Link to Personal Reflection]
+
 
 
 ---
 
 ## 1. Introduction & Dataset Overview
 
-### Background and Motivation
+1.1 Background and Motivation
 
 Stroke remains one of the foremost causes of death and long-term disability worldwide. It occurs when the blood supply to the brain is interrupted or reduced, leading to brain cell death due to lack of oxygen and nutrients. According to the World Health Organization, approximately 15 million people suffer a stroke each year, with nearly 5 million deaths and 5 million survivors experiencing permanent disabilities.
 
 This project explores the application of ML techniques to predict stroke occurrence using clinical and demographic data from the Kaggle Stroke Prediction Dataset. The goal is to build an accurate, interpretable, and deployable model that can aid healthcare providers and patients alike in stroke risk assessment.
-
-
 
 ### Dataset Description
 
@@ -59,8 +59,7 @@ The dataset presents several important characteristics and challenges that shape
 - Stroke cases represent approximately 4.9% (249 out of 5,110) of the dataset, making the classification task highly imbalanced. This imbalance could cause models to be biased towards predicting the majority “no stroke” class if unaddressed.
 
 #### Missing Values
-
-- The **bmi** feature contains missing values for about 4% of the records (201 out of 5,110). Since BMI is a crucial health indicator associated with stroke risk, effective imputation methods are necessary to avoid bias and loss of data.
+The **bmi** feature contains missing values for about 4% of the records (201 out of 5,110). Since BMI is a crucial health indicator associated with stroke risk, effective imputation methods are necessary to avoid bias and loss of data.
 
 #### Categorical Variables
 
@@ -788,3 +787,9 @@ This project includes a user-friendly Streamlit web application for predicting s
 - **Balancing recall and precision is difficult:** Achieving both high recall and precision for stroke prediction is challenging.
 
 - **Neural networks offer a good balance:** Deep learning models can provide better trade-offs between recall and precision compared to simpler models.
+
+
+
+## 12. Links to Personal Reflection
+Michelle: https://youtu.be/ZZFSFlfYjdc
+
