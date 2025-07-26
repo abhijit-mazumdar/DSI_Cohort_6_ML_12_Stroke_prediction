@@ -144,11 +144,11 @@ def compute_automated_risk_score(row, risk_info):
 
 def main():
     local_css()
-    st.markdown('<h1 class="main-title">Stroke Prediction App</h1>', unsafe_allow_html=True)
-    st.markdown("### Please enter your health details below to receive a stroke risk prediction.")
+    st.markdown('<h1 class="main-title">Stroke Early Prevention App</h1>', unsafe_allow_html=True)
+    st.markdown("### Please enter your details below to assess your risk profile.")
 
     # Load data
-    df = pd.read_csv("/Users/angiean/ML group project/01_materials/stroke_data.csv")
+    df = pd.read_csv("../data/healthcare-dataset-stroke-data.csv")
     df.drop('id', axis=1, inplace=True)
     df = df[df['gender'] != 'Other']
 
@@ -335,8 +335,8 @@ def main():
 
     # Chatbot section
     st.markdown("---")
-    st.markdown('<div class="section-container"><h2>Stroke Information Chatbot</h2></div>', unsafe_allow_html=True)
-    user_msg = st.text_input("Ask about stroke or risk factors:")
+    st.markdown('<div class="section-container"><h2>Simple Stroke Knowledge Chatbot</h2></div>', unsafe_allow_html=True)
+    user_msg = st.text_input("Sample Questions: Ask about stroke or risk factors:")
     if user_msg:
         user_msg_lower = user_msg.lower()
         if "stroke" in user_msg_lower:
@@ -354,7 +354,7 @@ def main():
     st.markdown("---")
     st.markdown('<div class="section-container"><h2>Stroke Quiz</h2></div>', unsafe_allow_html=True)
     q1 = st.radio("What does FAST stand for?", ["Face drooping", "Fast running", "Arm weakness", "Speech difficulty"])
-    q2 = st.radio("Is smoking a risk factor?", ["Yes", "No"])
+    q2 = st.radio("Is smoking a rißsk factor?", ["Yes", "No"])
     q3 = st.radio("Which organ is affected by stroke?", ["Heart", "Brain", "Liver"])
     if st.button("Submit Quiz"):
         score = 0
